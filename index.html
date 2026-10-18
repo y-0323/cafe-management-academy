@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>カフェ経営アカデミー</title>
+  <meta name="description" content="カフェを3年間経営しながら、P/L・B/S・C/F、損益分岐点、価格弾力性、競争戦略、NPV、ROEを学ぶ経営シミュレーションゲーム。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">☕</span>
+      <div>
+        <h1>カフェ経営アカデミー</h1>
+        <p class="sub">3年間で学ぶ、MBA入門の経営シミュレーション</p>
+      </div>
+    </div>
+    <nav class="topnav">
+      <button class="ghost" data-open="help">遊び方</button>
+      <button class="ghost" data-open="glossary">用語集</button>
+      <button class="ghost" id="btn-reset">最初から</button>
+    </nav>
+  </header>
+
+  <section class="status" id="status" aria-label="会社の状況"></section>
+
+  <main id="main" class="layout">
+    <section class="panel decisions" aria-labelledby="dec-title">
+      <div class="panel-head">
+        <h2 id="dec-title">今期の意思決定</h2>
+        <span class="period" id="period-label"></span>
+      </div>
+      <div id="event-banner"></div>
+
+      <form id="decision-form" autocomplete="off">
+        <fieldset>
+          <legend><span class="num">1</span>商品と価格 <small>マーケティング</small></legend>
+          <div class="field">
+            <label>原材料のグレード</label>
+            <div class="quality-group" id="quality-group"></div>
+          </div>
+          <div class="field">
+            <label for="price">客単価（1杯あたり） <output id="price-out"></output></label>
+            <input type="range" id="price" name="price" min="300" max="1200" step="10">
+            <p class="hint" id="price-hint"></p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="num">2</span>仕入と人員 <small>オペレーション</small></legend>
+          <div class="field">
+            <label for="purchase">仕入数（杯分・持ち越し不可）</label>
+            <div class="stepper">
+              <button type="button" data-step="purchase" data-delta="-500">−500</button>
+              <input type="number" id="purchase" name="purchase" min="0" max="40000" step="100" inputmode="numeric">
+              <button type="button" data-step="purchase" data-delta="500">＋500</button>
+            </div>
+            <p class="hint" id="purchase-hint"></p>
+          </div>
+          <div class="field">
+            <label for="staff">スタッフ数 <output id="staff-out"></output></label>
+            <input type="range" id="staff" name="staff" min="1" max="8" step="1">
+            <p class="hint" id="staff-hint"></p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="num">3</span>広告宣伝 <small>ブランド</small></legend>
+          <div class="field">
+            <label for="ad">広告費 <output id="ad-out"></output></label>
+            <input type="range" id="ad" name="ad" min="0" max="2000000" step="50000">
+            <p class="hint">認知度は毎期2割ずつ忘れられ、広告で積み上がります。効果は逓減します。</p>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="num">4</span>投資と資金調達 <small>ファイナンス</small></legend>
+          <label class="check" id="renovate-wrap">
+            <input type="checkbox" id="renovate" name="renovate">
+            <span><b>店舗を改装する</b>（400万円・席数+5,000杯分/期・5年で償却）</span>
+          </label>
+          <div class="field two">
+            <div>
+              <label for="borrow">新規借入</label>
+              <select id="borrow" name="borrow"></select>
+            </div>
+            <div>
+              <label for="repay">借入返済</label>
+              <select id="repay" name="repay"></select>
+            </div>
+          </div>
+          <p class="hint">借入金利は年2%（四半期0.5%）。借入上限は1,500万円。</p>
+        </fieldset>
+
+        <button type="submit" class="primary big" id="btn-run">この内容で四半期を進める →</button>
+      </form>
+    </section>
+
+    <aside class="side">
+      <section class="panel dash" aria-labelledby="dash-title">
+        <div class="panel-head">
+          <h2 id="dash-title">経営ダッシュボード</h2>
+          <span class="chip">リアルタイム試算</span>
+        </div>
+        <div id="dashboard"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="hist-title">
+        <div class="panel-head">
+          <h2 id="hist-title">業績推移</h2>
+        </div>
+        <div id="chart"></div>
+        <div id="last-summary"></div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- オープニング -->
+  <dialog id="dlg-intro" class="modal">
+    <div class="modal-body intro">
+      <div class="intro-hero">☕</div>
+      <h2>ようこそ、新米オーナー。</h2>
+      <p>あなたは駅前の小さなカフェ「<b>まめの木</b>」を引き継ぎました。資本金600万円、借入400万円。これから<b>3年間（12四半期）</b>経営します。</p>
+      <ul class="intro-list">
+        <li><b>毎期、5つの意思決定</b>：価格・品質・仕入・人員・広告（＋投資と借入）</li>
+        <li><b>決算書で結果を確認</b>：損益計算書・貸借対照表・キャッシュフロー計算書</li>
+        <li><b>メンターの講評とレッスン</b>：損益分岐点、価格弾力性、競争戦略、NPV、ROE…</li>
+        <li><b>市場は動く</b>：原料高騰、競合出店、賃上げ。環境変化に適応せよ。</li>
+      </ul>
+      <p class="goal">🎯 目標：3年後の<b>ROE（累計純利益 ÷ 資本金）</b>を最大化。現金が尽きたら倒産です。</p>
+      <button class="primary big" id="btn-start">経営を始める</button>
+    </div>
+  </dialog>
+
+  <!-- 決算結果 -->
+  <dialog id="dlg-result" class="modal wide">
+    <div class="modal-body">
+      <div class="modal-head">
+        <h2 id="result-title"></h2>
+        <span class="chip" id="result-chip"></span>
+      </div>
+      <div class="tabs" role="tablist">
+        <button role="tab" class="tab active" data-tab="summary">講評</button>
+        <button role="tab" class="tab" data-tab="pl">損益計算書</button>
+        <button role="tab" class="tab" data-tab="bs">貸借対照表</button>
+        <button role="tab" class="tab" data-tab="cf">キャッシュフロー</button>
+      </div>
+      <div id="result-content"></div>
+      <div class="modal-foot">
+        <button class="primary" id="btn-to-lesson">今期のレッスンへ →</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- レッスン -->
+  <dialog id="dlg-lesson" class="modal">
+    <div class="modal-body" id="lesson-content"></div>
+  </dialog>
+
+  <!-- 最終結果 -->
+  <dialog id="dlg-final" class="modal wide">
+    <div class="modal-body" id="final-content"></div>
+  </dialog>
+
+  <!-- 遊び方 -->
+  <dialog id="dlg-help" class="modal">
+    <div class="modal-body">
+      <div class="modal-head"><h2>遊び方とルール</h2></div>
+      <div class="prose">
+        <h3>需要（来店希望者数）を決める要素</h3>
+        <p>市場規模 × 季節 × <b>価格の割安感</b>（品質ごとの適正価格との比較）× <b>認知度</b> × <b>評判</b> × 競合の影響 × イベント</p>
+        <h3>実際に売れる杯数</h3>
+        <p>需要・<b>処理能力</b>（スタッフ1人4,000杯/期、席は12,000杯/期）・<b>仕入数</b>のうち最も小さい数。仕入れて余った分は廃棄されます。</p>
+        <h3>評判が上がる・下がる</h3>
+        <p>品質が高いと上昇。売り逃し（欠品・満席）、稼働率92%超の混雑、適正価格の1.3倍超の高値で下落します。</p>
+        <h3>季節</h3>
+        <p>春 100% ／ 夏 85% ／ 秋 105% ／ 冬 120%（ホットコーヒーが売れる季節）</p>
+        <h3>税金</h3>
+        <p>税引前利益の30%。過去の赤字（繰越欠損金）は将来の黒字と相殺できます。</p>
+        <h3>評価</h3>
+        <p>ROE（累計純利益 ÷ 資本金600万円）で S(100%以上) / A(60%) / B(30%) / C(0%) / D(赤字) / E(倒産)。</p>
+      </div>
+      <div class="modal-foot"><button class="primary" data-close>閉じる</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-glossary" class="modal">
+    <div class="modal-body">
+      <div class="modal-head"><h2>用語集</h2></div>
+      <dl class="glossary" id="glossary"></dl>
+      <div class="modal-foot"><button class="primary" data-close>閉じる</button></div>
+    </div>
+  </dialog>
+
+  <footer class="foot">
+    <p>カフェ経営アカデミー — 数値は学習用に簡略化したモデルです。</p>
+  </footer>
+
+  <script src="js/engine.js"></script>
+  <script src="js/lessons.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
